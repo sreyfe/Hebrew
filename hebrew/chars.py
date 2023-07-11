@@ -5,6 +5,12 @@ Constants for each Hebrew character and classes to represent them, and metadata 
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Union
 
+from hebrew.tzefanim import (
+    TZOFEN_ATBASH,
+    TZOFEN_ALBAM,
+    TZOFEN_AVGAD
+    )
+
 from hebrew.gematria import (
     MISPAR_HECHRACHI,
     MISPAR_GADOL,
@@ -204,6 +210,21 @@ class HebrewChar(BaseHebrewChar):
         :return: The value of the character for use in the reverse_avgad method of gematria.
         """
         return REVERSE_AVGAD.get(self.base_letter.char)
+
+    @property
+    def tzofen_atbash(self) -> str:
+
+        return TZOFEN_ATBASH.get(self.base_letter.char)
+
+    @property
+    def tzofen_albam(self) -> str:
+
+        return TZOFEN_ALBAM.get(self.base_letter.char)
+
+    @property
+    def tzofen_avgad(self) -> str:
+
+        return TZOFEN_AVGAD.get(self.base_letter.char)
 
     @classmethod
     def search(cls, char_name: str) -> Optional["HebrewChar"]:

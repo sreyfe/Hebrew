@@ -1,6 +1,7 @@
 from functools import reduce
 from typing import List, TypeVar, Dict
 from operator import add
+import re
 
 from .grapheme_string import GraphemeString
 from .chars import (
@@ -14,8 +15,10 @@ from .chars import (
     HEBREW_CHARS,
     FINAL_MINOR_LETTER_MAPPINGS,
     HebrewChar,
+    FINAL_LETTERS
 )
 from hebrew.gematria import GematriaTypes
+from hebrew.tzefanim import Tzefanim
 
 HebrewT = TypeVar("HebrewT", bound="Hebrew")
 
@@ -276,3 +279,31 @@ class Hebrew(GraphemeString):
             return 0
         else:
             return reduce(add, [getattr(c, method.value) for c in chars])
+
+    def tzofen(
+        self,
+        method: Tzefanim = Tzefanim.TZOFEN_ATBASH
+    ) -> HebrewT:
+        """
+        Returns a string encrypted with a tzofen.
+
+        :param method: The tzofen used to encrypt the string.
+        :return:
+        """
+
+        string = self.string
+
+        # TZOFEN_ATBASH (Heb: צופן אתב‟ש), TZOFEN_ALBAM (Heb: צפון אלב‟ם), and TZOFEN_AVGAD (Heb: צפון אבג‟ד) replace each letter with its position in the reversed Hebrew alphabet (e.g. א = ת, ב = ש, etc.), with the other half of the alphabet (e.g. א = ל, ב = מ), with the next letter (e.g. א = ב, ב = ג) respectively.
+
+        for c in HEBREW_CHARS:
+            #replaces character and adds Δ to end of replaced character to make sure they are not switched back
+            string = re.sub(c.char + r'(?!Δ)', getattr(c, method.value) + 'Δ', string)
+        string = string.replace('Δ', '')
+
+        # replace letters at ends of words with final variants, if applicable
+        # regex matches letters with final variants if they are followed only by non-letters (i.e. nikkudim, taamim) then by maqaf, sof passuq, or any non-hebrew character, indicating a word break
+        for c in ["כ", "מ", "נ", "צ", "פ"]:
+            regex_string = c + r'([\u0590-\u05c7]*(־|׃|[^\u0590-\u05ea]))'
+            string = re.sub(regex_string, FINAL_MINOR_LETTER_MAPPINGS[c] + r'\1', string)
+
+        return Hebrew(string)
